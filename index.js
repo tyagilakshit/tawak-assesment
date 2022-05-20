@@ -14,33 +14,124 @@ app.use("/data", async(req, res, next) => {
     const websiteId = "4f8b36d00000000000000001";
 
     let newdata = data.data;
+    let resDataDateFilterd = [];
     let resData = [];
     let resdataNew = [];
 
+    const startDate = new Date(2019, 3, 1);
+    const endDate = new Date(2024, 2, 1);
+
+    // const startDate = null;
+    // const endDate = null;
+
     // If Website ID given
 
-    if (websiteId) {
+    function processStatistics(resData, startTime = null, endTime = null) {
         let chatSum = 0;
         let missedChatSum = 0;
+        if (startTime && endTime) {
+            resData.forEach((item) => {
+                let itemStartDate = new Date(item.date).getTime();
+                let itemEndDate = new Date(item.date).getTime();
+                if (startTime.getTime() > itemStartDate && endTime < itemEndDate) {
+                    chatSum += Number(item.chats);
+                    missedChatSum += Number(item.missedChats);
+                }
+            });
 
+            return {
+                websiteId: websiteId,
+                chats: chatSum,
+                missedChats: missedChatSum,
+            };
+        } else {
+            resData.forEach((item) => {
+                chatSum += Number(item.chats);
+                missedChatSum += Number(item.missedChats);
+            });
+
+            return {
+                websiteId: websiteId,
+                chats: chatSum,
+                missedChats: missedChatSum,
+            };
+        }
+    }
+
+    function processStatisticsWithOutWebsiteId(
+        newArr,
+        newdata,
+        startTime = null,
+        endTime = null
+    ) {
+        if (startTime && endTime) {
+            let emptyArr = [];
+            if (newArr) {
+                newArr.forEach((item) => {
+                    let chats = 0;
+                    let missedChats = 0;
+
+                    newdata.forEach((dataItem) => {
+                        if (dataItem.websiteId === item) {
+                            let itemStartDateNew = new Date(item.date).getTime();
+                            let itemEndDateNew = new Date(item.date).getTime();
+
+                            if (
+                                startTime.getTime() > itemStartDateNew &&
+                                endTime < itemEndDateNew
+                            ) {
+                                chats += Number(dataItem.chats);
+                                missedChats += Number(dataItem.missedChats);
+                            }
+                        }
+                    });
+                    emptyArr.push({
+                        websiteId: item,
+                        chats: chats,
+                        missedChats: missedChats,
+                    });
+                });
+            }
+
+            return emptyArr;
+        } else {
+            let emptyArr = [];
+            if (newArr) {
+                newArr.forEach((item) => {
+                    let chats = 0;
+                    let missedChats = 0;
+
+                    newdata.forEach((dataItem) => {
+                        if (dataItem.websiteId === item) {
+                            chats += Number(dataItem.chats);
+                            missedChats += Number(dataItem.missedChats);
+                        }
+                    });
+                    emptyArr.push({
+                        websiteId: item,
+                        chats: chats,
+                        missedChats: missedChats,
+                    });
+                });
+            }
+        }
+        return emptyArr;
+    }
+
+    if (websiteId) {
         newdata.forEach((item) => {
             if (item.websiteId === websiteId) {
                 resData.push(item);
             }
         });
 
-        resData.forEach((item) => {
-            chatSum += Number(item.chats);
-            missedChatSum += Number(item.missedChats);
-        });
+        let responseData = processStatistics(resData);
 
-        const resDataNew = {
-            websiteId: websiteId,
-            chats: chatSum,
-            missedChats: missedChatSum,
-        };
+        if (responseData) {
+            return res.send(responseData);
+        }
 
-        return res.send(resDataNew);
+        return res.status(200).json({ msg: "Nothing Found" });
     }
 
     // If Website Id not given
@@ -52,28 +143,8 @@ app.use("/data", async(req, res, next) => {
 
         let newArr = [...new Set(resdataNew)];
 
-        let emptyArr = [];
+        let newResponseData = processStatisticsWithOutWebsiteId(newArr, newdata);
 
-        if (newArr) {
-            newArr.forEach((item) => {
-                let chats = 0;
-                let missedChats = 0;
-                // let obj = new Object();
-
-                newdata.forEach((dataItem) => {
-                    if (dataItem.websiteId === item) {
-                        chats += Number(dataItem.chats);
-                        missedChats += Number(dataItem.missedChats);
-                    }
-                });
-                emptyArr.push({
-                    websiteId: item,
-                    chats: chats,
-                    missedChats: missedChats,
-                });
-            });
-        }
-
-        return res.send(emptyArr);
+        return res.send(newResponseData);
     }
 });
