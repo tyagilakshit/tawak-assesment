@@ -22,9 +22,8 @@ class TaskController extends Controller
         try {
 
 
-            $websiteId = null;
-            // $websiteId = "4f8b36d00000000000000001";
-            $resData = [];
+            // $websiteId = null;
+            $websiteId = "4f8b36d00000000000000001";
             $startTime = null;
             $endTime = null;
 
@@ -33,23 +32,23 @@ class TaskController extends Controller
             $rawData = json_decode($rawData);
 
             if ($websiteId) {
-                $resData = [];
+                $singleWebsiteDataObjects = [];
                 foreach ($rawData as $item) {
                     if ($item->websiteId === $websiteId) {
-                        array_push($resData, $item);
+                        array_push($singleWebsiteDataObjects, $item);
                     }
                 }
-                $data =  $this->statisticsService->processStatistics($websiteId, $resData, $startTime, $endTime);
+                $data =  $this->statisticsService->processStatistics($websiteId, $singleWebsiteDataObjects, $startTime, $endTime);
                 return $data;
             } else {
 
-                $resDataNew = [];
+                $websiteIds = [];
                 foreach ($rawData as $item) {
-                    array_push($resDataNew, $item->websiteId);
+                    array_push($websiteIds, $item->websiteId);
                 };
 
-                $newArr = [...array_unique($resDataNew)];
-                $data = $this->statisticsService->processStatisticsWithOutWebsiteId($newArr, $rawData, $startTime, $endTime);
+                $uniqueWebsiteIds = [...array_unique($websiteIds)];
+                $data = $this->statisticsService->processStatisticsWithOutWebsiteId($uniqueWebsiteIds, $rawData, $startTime, $endTime);
                 return $data;
             }
         } catch (Throwable $th) {
@@ -63,8 +62,11 @@ class TaskController extends Controller
     {
         $curl = curl_init();
 
+
+        $URL = 'https://bitbucket.org/!api/2.0/snippets/tawkto/aA8zqE/4f62624a75da6d1b8dd7f70e53af8d36a1603910/files/webstats.json';
+
         curl_setopt_array($curl, array(
-            CURLOPT_URL => 'https://bitbucket.org/!api/2.0/snippets/tawkto/aA8zqE/4f62624a75da6d1b8dd7f70e53af8d36a1603910/files/webstats.json',
+            CURLOPT_URL => $URL,
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_ENCODING => '',
             CURLOPT_MAXREDIRS => 10,
